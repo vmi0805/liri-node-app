@@ -2,6 +2,7 @@ require("dotenv").config();
 var Twitter = require("twitter")
 var Spotify = require('node-spotify-api');
 const fs = require("fs");
+const request = require("request");
 
 const keys = require("./keys.js");
 
@@ -24,19 +25,28 @@ let commands = process.argv[2];
 let parameter = process.argv[3];
 
 // Twitter and Spotify functions
-const spot = function(){
+const spot = function(x){
 
-	if(parameter === undefined){
-			parameter = 'I want it that way';
+	if(x === undefined){
+			x = 'The Sign';
 		}
 
-	spotify.search({ type: 'track', query: parameter}, function(err, data) {
+	spotify.search({ type: 'track', query: x}, function(err, data) {
 	  if (err) {
 	    return console.log('Error occurred: ' + err);
 	  }
-	  let newData = data.tracks.items
-	  for (i = 0; i < newData.length; i++){
-	  	console.log(newData[i].duration_ms);
+
+	  const items = data.tracks.items;
+
+	  // console.log(JSON.stringify(items, null, 2))
+
+	  for (i = 0; i < items.length; i++){
+		  	console.log('~~~~~~~~~~~~~~~~')
+		  	console.log(items[i].artists[0].name);
+		  	console.log(items[i].name);
+		  	console.log(items[i].album.name);
+		  	console.log(items[i].external_urls.spotify);
+		  	console.log('~~~~~~~~~~~~~~~~')
 	  }
 	});
 }
@@ -58,26 +68,90 @@ const twit = function(){
 	});
 }
 
+//OMDB API
+const OMDB = function(){
+
+	if(x === undefined){
+			x = 'Mr. Nobody';
+		}
+
+	let movieName = process.argv[3];
+
+	const queryUrl = "http://www.omdbapi.com/?t=" + x + "&y=&plot=short&apikey=trilogy";
+
+		console.log(queryUrl);
+
+		request(queryUrl, function(error, response, body) {
+
+		  // If the request is successful
+		  if (!error && response.statusCode === 200) {
+
+		  	const dataNew = JSON.parse(response.body, null, 2);
+
+		  	// console.log(dataNew);
+
+		  	console.log('~~~~~~~~~~~~~~~~~')
+		  	console.log('->' + dataNew.Title);
+		  	console.log('->' + dataNew.Year);
+		  	console.log('->' + dataNew.Rated);
+		  	console.log(dataNew.Ratings);		  	
+		  	console.log('->' + dataNew.Country);	
+		  	console.log('->' + dataNew.Language);	
+		  	console.log('->' + dataNew.Plot);	
+		  	console.log('->' + dataNew.Actors);	
+		  	console.log('~~~~~~~~~~~~~~~~~')
+		  }
+		});
+}
+
+const doit = function(){
+
+		fs.readFile("random.txt", "utf8", function(error, data) {
+
+		  if (error) {
+		    return console.log(error);
+		  }
+
+		  const dataArr = data.split(",");
+		  
+		  let doitCommand = dataArr[0];
+		  let whattodo = dataArr[1];
+
+		  console.log(doitCommand)
+
+
+		  switch(doitCommand){
+	  	    	case 'my-tweets':
+					twit();
+					//ok
+				break;
+				case 'spotify-this-song': 
+					spot(whattodo);
+				break;
+				case 'movie-this':
+					OMDB(whattodo);
+				break;
+				case 'do-what-it-says':
+					doit();
+				break;
+		  }
+
+		});
+}
+
 // App logic
 switch(commands){
 	case 'my-tweets':
 		twit();
 	break;
 	case 'spotify-this-song': 
-		spot();
+		spot(parameter);
 	break;
 	case 'movie-this':
-
-		// Need to add in the OMDB API
-
-
-
+		OMDB(parameter);
 	break;
 	case 'do-what-it-says':
-
-		// Need to add in the read from random.txt file and reuse the spotify function spot()
-
-
+		doit();
 	break;
 }
 
